@@ -1,5 +1,7 @@
 # coding: utf-8
 
+RGD = !!(ARGV.delete '--rgd')
+
 class Object
   def try sym, *args
     __send__ sym, *args if respond_to? sym
@@ -19,12 +21,13 @@ save_data [
     require 'background_running'
     require 'full_error'
     require 'conhost'
+    require 'helper'
     Font.default_name = ['等距更纱黑体 T SC']
     rgss_main { rgss_stop }
   RUBY
 ], 'Scripts.rvdata2'
 
-open 'Game.ini', 'w' do |f|
+open (RGD ? 'RGD.ini' : 'Game.ini'), 'w' do |f|
   f.puts <<-INI.strip_heredoc
     [Game]
     RTP=RPGVXAce
@@ -66,6 +69,13 @@ stderr_thread = Thread.new do
   end
 end
 
+def complete? text
+  catch(:out) { eval "BEGIN { throw :out }; #{text}" }
+  text
+rescue SyntaxError
+  nil
+end
+
 def remote_eval text
   File.delete CatRep.o
   output CatRep.i, text
@@ -78,7 +88,7 @@ require 'wirb-colorize'
 require 'stringex'
 
 hwnd = Kernel32.GetConsoleWindow
-pid = spawn 'Game.exe', 'test'
+pid = spawn (RGD ? 'RGD.exe' : 'Game.exe'), 'test'
 sleep 0.2
 User32.SetForegroundWindow hwnd
 
@@ -87,13 +97,26 @@ STD_INPUT_HANDLE = -10
 @h_stdin = Kernel32.GetStdHandle(STD_INPUT_HANDLE)
 @buffer  = "\0" * BUFSIZ
 @read    = buf('l')
+@text    = []
+@prompt  = '>> '
 
 loop do
-  print '>> '
+  print @prompt
   Kernel32.ReadConsole(@h_stdin, @buffer, BUFSIZ, @read, 0)
   text = @buffer.unpack('A*')[0].chomp.s2u
-  break if text == 'exit'
-  puts "=> #{Wirb.colorize_result remote_eval text}"
+  if text == "\x11"
+    @text = []
+  else
+    @text << text
+    break if @text == ['exit']
+    if text = complete?(@text.join("\n"))
+      puts "=> #{Wirb.colorize_result remote_eval text}"
+      @text = []
+      @prompt  = '>> '
+    else
+      @prompt = '.. '
+    end
+  end
   Ntdll.memset(@buffer, 0, BUFSIZ)
 end
 
@@ -103,5 +126,5 @@ rescue
 end
 
 unsafe { Process.kill 9, pid }
-unsafe { File.delete 'Scripts.rvdata2', 'Game.ini' }
+unsafe { File.delete 'Scripts.rvdata2', (RGD ? 'RGD.ini' : 'Game.ini') }
 unsafe { File.delete CatRep.i, CatRep.o, CatRep.stdout, CatRep.stderr }
