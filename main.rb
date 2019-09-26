@@ -16,13 +16,13 @@ class String
 end
 
 save_data [
-  [rand(32768), 'Main', Zlib::Deflate.deflate(<<-RUBY)]
+  [rand(32768), 'Main', Zlib::Deflate.deflate(<<-RUBY.strip_heredoc)]
     $: << 'lib'
     require 'background_running'
     require 'full_error'
     require 'conhost'
     require 'helper'
-    Font.default_name = ['等距更纱黑体 T SC']
+    Font.default_name = ['等距更纱黑体 T SC', '微软雅黑', '黑体', 'Segoe UI']
     rgss_main { rgss_stop }
   RUBY
 ], 'Scripts.rvdata2'
@@ -30,10 +30,10 @@ save_data [
 open (RGD ? 'RGD.ini' : 'Game.ini'), 'w' do |f|
   f.puts <<-INI.strip_heredoc
     [Game]
-    RTP=RPGVXAce
+    RTP=#{RGD ? '' : 'RPGVXAce'}
+    Title=Project1
     Library=RGSS301.dll
     Scripts=Scripts.rvdata2
-    Title=Project1
   INI
 end
 
@@ -64,7 +64,7 @@ end
 stderr_thread = Thread.new do
   loop do
     sleep 0.02 until File.exist? CatRep.stderr
-    puts "\e[1m\e[31m#{File.read(CatRep.stderr)}\e[0m"
+    puts "\e[1m\e[31m#{File.read CatRep.stderr}\e[0m"
     File.delete CatRep.stderr
   end
 end
@@ -76,11 +76,19 @@ rescue SyntaxError
   nil
 end
 
+def push_history text
+  open 'history.txt', 'a' do |f|
+    f.puts text
+  end
+  text
+end
+
 def remote_eval text
-  File.delete CatRep.o
+  push_history ">> #{text}"
+  File.delete CatRep.o if File.exist? CatRep.o
   output CatRep.i, text
   sleep 0.02 until File.exist? CatRep.o
-  File.read CatRep.o
+  (File.read CatRep.o).tap { |s| push_history "=> #{s}" }
 end
 
 require 'api'
@@ -103,10 +111,15 @@ STD_INPUT_HANDLE = -10
 loop do
   print @prompt
   Kernel32.ReadConsole(@h_stdin, @buffer, BUFSIZ, @read, 0)
-  text = @buffer.unpack('A*')[0].chomp.s2u
-  if text == "\x11"
+  text = @buffer.unpack('A*')[0].chomp
+  if text == "\x11" # ^Q
     @text = []
+  elsif text == "\x17" # ^W
+    puts "=> #{Wirb.colorize_result remote_eval @text.join("\n")}"
+    @text = []
+    @prompt  = '>> '
   else
+    text = text.s2u
     @text << text
     break if @text == ['exit']
     if text = complete?(@text.join("\n"))

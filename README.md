@@ -1,12 +1,14 @@
 ## CAn'T REProduce
 
+![](screenshot/readme.png)
+
 This is my [RGSS3][1] (including [RGD][2]) playground.
 
 ### Get Started
 
 Since I do not want to put any binary file in a git repo, you have to
 put Game.exe, RGSS301.dll and [RGD.exe][3] (rename the DX9 _Game.exe_ to
-_RGD.exe_, optional) in the root folder. Don't ask me where to find them.
+_RGD.exe_, optional) in the root folder. [Find them here](Prerequisites.md).
 
 ### Build
 
