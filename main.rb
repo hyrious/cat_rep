@@ -1,6 +1,7 @@
 # coding: utf-8
 
 RGD = !!(ARGV.delete '--rgd')
+NORTP = !!(ARGV.delete '--nortp')
 
 class Object
   def try sym, *args
@@ -30,7 +31,7 @@ save_data [
 open (RGD ? 'RGD.ini' : 'Game.ini'), 'w' do |f|
   f.puts <<-INI.strip_heredoc
     [Game]
-    RTP=#{RGD ? '' : 'RPGVXAce'}
+    RTP=#{(RGD || NORTP) ? '' : 'RPGVXAce'}
     Title=Project1
     Library=RGSS301.dll
     Scripts=Scripts.rvdata2
@@ -122,7 +123,7 @@ loop do
     text = text.s2u
     @text << text
     break if @text == ['exit']
-    if text = complete?(@text.join("\n"))
+    if text = complete?(@text.join("\n").force_encoding('utf-8'))
       puts "=> #{Wirb.colorize_result remote_eval text}"
       @text = []
       @prompt  = '>> '
