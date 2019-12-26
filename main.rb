@@ -7,40 +7,41 @@ ssr bg, %{
   res = 0.5f;
 }
 
-s = spr [100, 100] do |_, b|
-  b.font.size = 72
-  b.font.color = Color.new(0x66, 0xcc, 0xff)
-  b.font.outline = false
-  b.draw_text b.rect, '⑨', 1
+def sample_sprite char, opt={}
+  spr [100, 100], opt do |s, b|
+    b.font.size = 72
+    b.font.color = Color.new(0x66, 0xcc, 0xff)
+    b.font.outline = false
+    b.draw_text b.rect, char, 1
+    s.ox, s.oy = s.width / 2, s.height / 2
+    s.x, s.y = Graphics.width / 2, Graphics.height / 2
+  end
 end
-s.ox, s.oy = s.width / 2, s.height / 2
-s.x, s.y = Graphics.width / 2, Graphics.height / 2
+
+v = Viewport.new
+s = sample_sprite '⑨', viewport: v
+s.x -= 18
+t = sample_sprite '葱', viewport: v
+t.x += 18
 
 # float4 res, color;
 # float2 texcoord;
-ssr s, %{
-  static const float DOUBLE_PI = PI * 2;
-  static const float ANGLE_STEP = PI * 0.2;
-  
-  float thickness = 1;
+ssr v, %{
+  static const float PIXEL_SIZE = 4.0;
 }, %q[
-  float4 cur;
-  float maxA = 0.0;
-  float2 displaced;
-  for (float angle = 0.0; angle < DOUBLE_PI; angle += ANGLE_STEP) {
-    displaced = texcoord + thickness * float2(sampWidth * cos(angle), sampHeight * sin(angle));
-    cur = tex2D(spriteSampler, displaced);
-    maxA = max(maxA, cur.a);
-  }
-  maxA = max(maxA, res.a);
-  res = float4(res.rgb + (1.0 - res.a) * maxA, maxA);
+  float2 one = float2(sampWidth, sampHeight);
+  float2 sqa = one * PIXEL_SIZE;
+  texcoord = sqa * floor(texcoord / sqa);
+  for (int i = 0; i < int(PIXEL_SIZE); ++i)
+    for (int j = 0; j < int(PIXEL_SIZE); ++j)
+      res += tex2D(spriteSampler, texcoord + one * float2(i, j));
+  res /= pow(PIXEL_SIZE, 2.0);
 ]
 
 Graphics.background_exec = true
 rgss_main {
   loop {
     Mouse.update
-    s.set_effect_param 'thickness', Mouse.x * 4.0 / Graphics.width
     Graphics.update
   }
 }
