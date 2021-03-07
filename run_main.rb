@@ -17,7 +17,7 @@ save_data [
   RUBY
 ], 'Scripts.rvdata2'
 
-open 'RGD.ini', 'w' do |f|
+open 'Game.ini', 'w' do |f|
   f.puts <<-INI.strip_heredoc
     [Game]
     RTP=
@@ -29,12 +29,12 @@ end
 
 require 'api'
 hwnd = Kernel32.GetConsoleWindow
-# User32.ShowWindow hwnd, 6
-User32.ShowWindow hwnd, 0
+User32.ShowWindow hwnd, 6
+# User32.ShowWindow hwnd, 0
 
-system 'RGD.exe', 'test', 'console'
+system 'Game.exe', 'test', 'console'
 
 begin
-  File.delete 'Scripts.rvdata2', 'RGD.ini'
+  File.delete 'Scripts.rvdata2', 'Game.ini'
 rescue
 end
