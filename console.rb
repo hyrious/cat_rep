@@ -23,7 +23,8 @@ save_data [
     require 'full_error'
     require 'conhost'
     require 'helper'
-    Font.default_name = ['等距更纱黑体 T SC', '微软雅黑', '黑体', 'Segoe UI']
+    require 'api'
+    Font.default_name = ['等距更纱黑体 SC', '微软雅黑', '黑体', 'Segoe UI']
     rgss_main { rgss_stop }
   RUBY
 ], 'Scripts.rvdata2'
@@ -109,6 +110,7 @@ STD_INPUT_HANDLE = -10
 @text    = []
 @prompt  = '>> '
 
+puts 'Type "exit" to quit.'
 loop do
   print @prompt
   Kernel32.ReadConsole(@h_stdin, @buffer, BUFSIZ, @read, 0)
@@ -128,6 +130,9 @@ loop do
       @text = []
       @prompt  = '>> '
     else
+      if @text.size == 1
+        puts '# Input ctrl+q<enter> to discard the buffer, ctrl+w<enter> to submit anyway.'
+      end
       @prompt = '.. '
     end
   end

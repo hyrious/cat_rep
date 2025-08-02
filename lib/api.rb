@@ -4,11 +4,14 @@
 class Dll
   def initialize dll
     @dll = dll.to_s
+    @cache = {}
   end
 
   def method_missing func, *args
     imports = args.map { |e| Integer === e ? 'l' : 'p' }
-    Win32API.new(@dll, func.to_s, imports, 'l').call(*args)
+    key = [func.to_s, imports].join(',')
+    @cache[key] ||= Win32API.new(@dll, func.to_s, imports, 'l')
+    @cache[key].call(*args)
   end
 end
 

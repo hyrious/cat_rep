@@ -27,14 +27,8 @@ open 'Game.ini', 'w' do |f|
   INI
 end
 
-require 'api'
-hwnd = Kernel32.GetConsoleWindow
-User32.ShowWindow hwnd, 6
-# User32.ShowWindow hwnd, 0
-
-system 'Game.exe', 'test', 'console'
-
 begin
+  system 'Game.exe', 'test', 'console'
   File.delete 'Scripts.rvdata2', 'Game.ini'
 rescue
 end

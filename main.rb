@@ -1,36 +1,44 @@
 # coding: utf-8
-require_relative 'lib/ctrl_b'
-require_relative 'lib/helper'
 
-def make c
-  s = spr([32, 32]) { |_, b| b.draw_text b.rect, c, 1 }
-  s.ox, s.oy = s.width / 2, s.height / 2
-  s
+$: << 'lib'
+require 'stringex'
+require 'api'
+
+IME = dll 'rgss_ime.dll'
+
+module CALLBACKS
+  def self.on_mousewheel delta
+    p delta
+  end
+
+  def self.on_langchange keyboard
+    puts "IME language change #{keyboard}"
+  end
+
+  def self.on_composition_start
+    # puts "IME composition start"
+  end
+
+  def self.on_composition cursor, length, wstr
+    puts "IME composition #{cursor} #{length} #{wstr}"
+    size = IME.candidateList Graphics.window_hwnd, nil
+    return if size < 0
+    buffer = "\x00" * size
+    IME.candidateList Graphics.window_hwnd, buffer
+
+    size, style, count, sel, pageStart, pageSize = buffer.unpack 'LLLLLL'
+    offsets = buffer.slice(4 * 6, 4 * pageSize).unpack 'L*'
+    candidates = offsets.map { |i| buffer.unpack("x#{i}Z*")[0].s2u.force_encoding('utf-8') }
+    puts "IME candidates count=#{count} page=(#{pageStart}, #{pageSize})\n#{candidates.join("|")}"
+  end
+
+  def self.on_composition_result cursor, length, wstr
+    puts "IME composition result #{cursor} #{length} #{wstr}"
+  end
 end
 
-def update s, t
-  s.x = 2 * t * Math.sin(2.0 * Graphics.frame_count / t)
-  s.y = -2 * t * Math.cos(2.0 * Graphics.frame_count / t)
-  s.angle += t
-end
-
-sun = make '★'
-earth = make '○'
-luna = make '·'
-
-sun.add_child earth
-earth.add_child luna
-
-Graphics.vsync = false
-Graphics.frame_rate = 250
-Graphics.background_exec = true
 rgss_main {
-  loop {
-    Mouse.update
-    sun.x, sun.y = Mouse.x, Mouse.y
-    sun.angle -= 1
-    update earth, 40
-    update luna, 10
-    Graphics.update
-  }
+  Graphics.background_exec = true
+  IME.enable Graphics.window_hwnd
+  rgss_stop
 }

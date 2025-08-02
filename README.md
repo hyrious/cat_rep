@@ -10,6 +10,28 @@ Since I do not want to put any binary file in a git repo, you have to
 put Game.exe, RGSS301.dll and [RGD.exe][3] (rename the DX9 _Game.exe_ to
 _RGD.exe_, optional) in the root folder. [Find them here](Prerequisites.md).
 
+### Start the REPL
+
+This will use a dumb file-based server-client logic to communicate between the game process and the console.
+
+```cmd
+:: Make rgss.exe if you do not have one.
+make
+:: Run console.rb
+rgss console.rb
+```
+
+### Start the Game
+
+```cmd
+:: Put your game logic in main.rb
+edit main.rb
+:: Run run_main.rb
+rgss run_main.rb
+```
+
+Hint: add `` $: << 'lib' `` at the top to enable `require "file"` from the lib folder.
+
 ### Build
 
 There are several build tools on Windows, these are recommended:
@@ -22,7 +44,7 @@ There are several build tools on Windows, these are recommended:
 
 ### License
 
-This project is licensed under [GLWTPL][8]
+This project is licensed under [GLWTPL][8].
 
 If any script from this project helps you and you want to share/redistribute it,
 you can follow the [GLWTPL][8] or [the MIT License][9] ([RBLv1][10] if you are
