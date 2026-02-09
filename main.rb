@@ -1,44 +1,34 @@
 # coding: utf-8
 
 $: << 'lib'
-require 'stringex'
-require 'api'
-
-IME = dll 'rgss_ime.dll'
-
-module CALLBACKS
-  def self.on_mousewheel delta
-    p delta
-  end
-
-  def self.on_langchange keyboard
-    puts "IME language change #{keyboard}"
-  end
-
-  def self.on_composition_start
-    # puts "IME composition start"
-  end
-
-  def self.on_composition cursor, length, wstr
-    puts "IME composition #{cursor} #{length} #{wstr}"
-    size = IME.candidateList Graphics.window_hwnd, nil
-    return if size < 0
-    buffer = "\x00" * size
-    IME.candidateList Graphics.window_hwnd, buffer
-
-    size, style, count, sel, pageStart, pageSize = buffer.unpack 'LLLLLL'
-    offsets = buffer.slice(4 * 6, 4 * pageSize).unpack 'L*'
-    candidates = offsets.map { |i| buffer.unpack("x#{i}Z*")[0].s2u.force_encoding('utf-8') }
-    puts "IME candidates count=#{count} page=(#{pageStart}, #{pageSize})\n#{candidates.join("|")}"
-  end
-
-  def self.on_composition_result cursor, length, wstr
-    puts "IME composition result #{cursor} #{length} #{wstr}"
-  end
-end
+require 'helper'
 
 rgss_main {
   Graphics.background_exec = true
-  IME.enable Graphics.window_hwnd
-  rgss_stop
+
+  s = spr 'D:\SteamLibrary\steamapps\common\RPGVXAce\rtp\Graphics\Battlers\Succubus.png'
+  s.ox = s.width / 2
+  s.oy = s.height / 2
+  s.x = Graphics.width / 2
+  s.y = Graphics.height / 2
+
+  ssr s, %{
+    float offset = 0.01;
+    float intensity = 0.5;
+  }, %{
+    float r_uv_x = clamp(texcoord.x - offset, 0.001, 0.999);
+    float b_uv_x = clamp(texcoord.x + offset, 0.001, 0.999);
+    float  red = tex2D(spriteSampler, float2(r_uv_x, texcoord.y)).r;
+    float blue = tex2D(spriteSampler, float2(b_uv_x, texcoord.y)).b;
+    float4 result = float4(red, res.g, blue, res.a);
+    res = lerp(res, result, intensity);
+  }
+
+  loop {
+    Graphics.update
+    Input.update
+
+    s.set_effect_param 'offset', Mouse.x * 1.0 / Graphics.width
+    s.set_effect_param 'intensity', Mouse.y * 1.0 / Graphics.height
+  }
 }
